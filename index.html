@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="app.js" defer></script>
+    <title>Todo List</title>
+</head>
+
+<body>
+    <div class="todo-container">
+        <h1 id="title">Задачи</h1>
+        <div class="add-task">
+            <input type="text" id="new-task" placeholder="Новая задача">
+            <button id="btn">Добавить</button>
+        </div>
+        <select id="filter">
+            <option value="all">Все</option>
+            <option value="done">Выполненные</option>
+            <option value="undone">Невыполненные</option>
+        </select>
+        <ul id="todo-list"></ul>
+    </div>
+</body>
+
+</html>
