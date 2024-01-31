@@ -135,8 +135,8 @@ function applyFilter() {
 // !! Обработчики событий:
 
 Button.addEventListener('click', () => {
-    if (Element.value.length === 0 || Element.value.length > 35) {
-        alert('Ты шо чекнутый');
+    if (!Element.value.trim() || Element.value.length > 35) {
+        alert('Введите название заметки');
         Element.value = ''
         return;
     }
