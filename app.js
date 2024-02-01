@@ -1,79 +1,80 @@
-const Element = document.getElementById('new-task');
-const Button = document.getElementById('btn');
+const element = document.getElementById('new-task');
+const button = document.getElementById('btn');
 const list = document.getElementById('todo-list');
 const title = document.getElementById('title');
 const filterSelect = document.getElementById('filter');
 
-let counter = 0;
-let doneCounter = 0;
-let undoneCounter = 0;
+const counters = {
+    total: 0,
+    done: 0,
+    undone: 0,
+};
+
 let filter = 'all';
-let array = loadFromLocalStorage();
+let tasks = loadFromLocalStorage();
 
-if (!Array.isArray(array)) {
-    array = [];
+if (!Array.isArray(tasks)) {
+    tasks = [];
 }
-updateAndRender(array);
+updateAndRender(tasks);
 
-// ! Функции для работы с локальным хранилищем:
-
-function saveToLocalStorage(array) {
-    localStorage.setItem('todoList', JSON.stringify(array));
+function saveToLocalStorage(tasks) {
+    localStorage.setItem('todoList', JSON.stringify(tasks));
 }
 
 function loadFromLocalStorage() {
-    const savedList = localStorage.getItem('todoList');
-    return savedList ? JSON.parse(savedList) : [];
+    const savedTasks = localStorage.getItem('todoList');
+    return savedTasks ? JSON.parse(savedTasks) : [];
 }
 
-// ! Функции отрисовки и обновления:
+function createTaskElement(title, isDone) {
+    const taskContainer = document.createElement('div');
+    taskContainer.className = 'task-container';
 
-function renderTask(title, isDone) {
-    var taskContainer = document.createElement("div");
-    taskContainer.className = "task-container";
-    var listItem = document.createElement("li");
-    listItem.className = "task";
+    const listItem = document.createElement('li');
+    listItem.className = 'task';
 
     const spanClass = isDone ? 'done' : '';
+    const span = document.createElement('span');
+    span.className = spanClass;
+    span.textContent = title;
 
-    listItem.innerHTML = `
-        <span class="${spanClass}">${title}</span>
-        <button onclick="removeTask(this)">Удалить</button>
-    `;
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = 'Удалить';
+    deleteButton.addEventListener('click', () => {
+        const taskContainer = deleteButton.closest('.task-container');
+        const index = Array.from(list.children).indexOf(taskContainer);
+        removeTask(index);
+    });
+
+    listItem.appendChild(span);
+    listItem.appendChild(deleteButton);
 
     listItem.addEventListener('click', () => {
-        const span = listItem.querySelector('span');
         span.classList.toggle('done');
         updateCounters();
     });
 
     taskContainer.appendChild(listItem);
-    list.appendChild(taskContainer);
-    Element.value = '';
+    return taskContainer;
 }
 
-function render(array) {
-    if (array.length === 0) {
-        return;
-    } else {
-        array.forEach(task => {
-            counter++;
-            if (task.isDone) {
-                doneCounter++;
-            } else {
-                undoneCounter++;
-            }
-            renderTask(task.title, task.isDone);
-        });
-    }
-}
-
-function updateAndRender(array) {
+function renderTasks(taskList) {
     list.innerHTML = '';
-    counter = 0;
-    doneCounter = 0;
-    undoneCounter = 0;
-    render(array);
+    taskList.forEach(task => {
+        counters.total++;
+        task.isDone ? counters.done++ : counters.undone++;
+        const taskElement = createTaskElement(task.title, task.isDone);
+        list.appendChild(taskElement);
+    });
+}
+
+function updateAndRender(taskList) {
+    list.innerHTML = '';
+    counters.total = 0;
+    counters.done = 0;
+    counters.undone = 0;
+    renderTasks(taskList);
     updateCounters();
 }
 
@@ -81,48 +82,44 @@ function updateCounters() {
     let selectedCounter;
 
     if (filter === 'all') {
-        selectedCounter = counter;
+        selectedCounter = counters.total;
     } else if (filter === 'done') {
-        selectedCounter = doneCounter;
+        selectedCounter = counters.done;
     } else if (filter === 'undone') {
-        selectedCounter = undoneCounter;
+        selectedCounter = counters.undone;
     }
 
     title.textContent = 'Задачи ' + selectedCounter;
 }
 
-
-// ! Функции для управления задачами:
-
 function addTask(title, isDone) {
     const newTask = { title, isDone };
-    array.push(newTask);
-    saveToLocalStorage(array);
-    updateAndRender(array);
+    tasks.push(newTask);
+    saveToLocalStorage(tasks);
+    updateAndRender(tasks);
+    element.value = ''; // Очищаем поле ввода
 }
 
 function toggleTask(index) {
-    const task = array[index];
+    const task = tasks[index];
     if (task && 'isDone' in task) {
         task.isDone = !task.isDone;
-        saveToLocalStorage(array);
-        updateAndRender(array);
+        saveToLocalStorage(tasks);
+        updateAndRender(tasks);
     }
 }
 
 function removeTask(index) {
-    array.splice(index, 1);
+    tasks.splice(index, 1);
     updateCounters();
-    saveToLocalStorage(array);
-    updateAndRender(array);
+    saveToLocalStorage(tasks);
+    updateAndRender(tasks);
 }
 
-// ! Функции для фильтрации:
-
 function applyFilter() {
-    const tasks = document.querySelectorAll('.task-container');
+    const taskContainers = document.querySelectorAll('.task-container');
 
-    tasks.forEach(taskContainer => {
+    taskContainers.forEach(taskContainer => {
         const isDone = taskContainer.querySelector('span').classList.contains('done');
         if (filter === 'all' || (filter === 'done' && isDone) || (filter === 'undone' && !isDone)) {
             taskContainer.style.display = 'block';
@@ -132,15 +129,13 @@ function applyFilter() {
     });
 }
 
-// !! Обработчики событий:
-
-Button.addEventListener('click', () => {
-    if (!Element.value.trim() || Element.value.length > 35) {
-        alert('Введите название заметки');
-        Element.value = ''
+button.addEventListener('click', () => {
+    if (!element.value.trim() || element.value.length > 35) {
+        alert('Введите название задачи');
+        element.value = '';
         return;
     }
-    addTask(Element.value, false);
+    addTask(element.value, false);
 });
 
 filterSelect.addEventListener('change', () => {
@@ -149,7 +144,18 @@ filterSelect.addEventListener('change', () => {
     applyFilter();
 });
 
-list.addEventListener('click', (event) => {
+element.addEventListener('keyup', (event) => {
+    if (event.key === 'Enter') {
+        if (!element.value.trim() || element.value.length > 35) {
+            alert('Введите название задачи');
+            element.value = '';
+            return;
+        }
+        addTask(element.value, false);
+    }
+});
+
+list.addEventListener('click', event => {
     const targetTask = event.target.closest('.task-container');
     if (targetTask) {
         const index = Array.from(list.children).indexOf(targetTask);
